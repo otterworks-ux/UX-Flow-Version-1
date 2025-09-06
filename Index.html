@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OTTERWORKS Clickdummy</title>
+  <!-- React 18 UMD + Babel for quick local run (no build tool required) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22d3ee; --accent2:#a78bfa; --ok:#34d399; --warn:#f59e0b; --err:#ef4444; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#0b1220,#0f172a 20%,#0b1220); color:var(--text)}
+    .wrap{max-width:960px;margin:0 auto;padding:24px}
+    .card{background:rgba(17,24,39,.85); border:1px solid rgba(148,163,184,.15); border-radius:20px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .col{flex:1 1 300px}
+    h1,h2,h3{margin:0 0 8px}
+    h1{font-size:28px;letter-spacing:.2px}
+    h2{font-size:20px;color:var(--text)}
+    p{margin:6px 0;color:var(--muted)}
+    .progress{height:8px;background:#0b1220;border-radius:999px;overflow:hidden;border:1px solid rgba(148,163,184,.15);margin:16px 0}
+    .progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0}
+    .btn{cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid rgba(148,163,184,.2); color:var(--text); background:#0b1220; transition:.15s transform, .15s background}
+    .btn.primary{background:linear-gradient(90deg,rgba(34,211,238,.15),rgba(167,139,250,.15)); border-color:rgba(34,211,238,.35)}
+    .btn:hover{transform:translateY(-1px)}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+    .chip{padding:10px 12px;border-radius:999px;border:1px solid rgba(148,163,184,.25);cursor:pointer}
+    .chip.on{background:rgba(34,211,238,.15);border-color:var(--accent);}
+    .kachel{flex:1 1 220px;min-width:220px;background:#0b1220;border:1px solid rgba(148,163,184,.2);border-radius:16px;padding:14px}
+    .kachel h4{margin:0 0 6px}
+    .muted{color:var(--muted)}
+    .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .pill{font-size:12px;color:#0b1220;background:linear-gradient(90deg,var(--accent),var(--accent2)); padding:6px 10px;border-radius:999px}
+    .footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px}
+    .pkg{border:1px solid rgba(148,163,184,.2);border-radius:16px;padding:16px;background:#0b1220}
+    .pkg h3{margin:0 0 4px}
+    .price{font-size:22px}
+    .radio{display:flex;align-items:center;gap:8px;margin:6px 0}
+    .input, select{width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(148,163,184,.25); background:#0b1220; color:var(--text)}
+    .cover{background:linear-gradient(135deg,rgba(34,211,238,.15),rgba(167,139,250,.15)); border:1px dashed rgba(148,163,184,.35); border-radius:16px; height:200px; display:flex; align-items:center; justify-content:center; font-weight:700}
+    .tiny{font-size:12px}
+    .tag{display:inline-block;padding:4px 8px;border:1px solid rgba(148,163,184,.25); border-radius:999px; margin:4px 6px 0 0; font-size:12px}
+    dialog{border:none;border-radius:14px; padding:0; background:transparent}
+    .modal{background:#0b1220; border:1px solid rgba(148,163,184,.2); border-radius:16px; padding:18px; width:min(520px,90vw)}
+    .link{color:#a5b4fc; text-decoration:underline; cursor:pointer}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useRef, useEffect } = React;
+
+function Progress({step,total}){
+  const pct = Math.round((step/total)*100);
+  return (
+    <div className="progress" aria-label={`Fortschritt ${pct}%`}><i style={{width:`${pct}%`}} /></div>
+  );
+}
+
+function TopBar({step,total,onBack}){
+  return (
+    <div className="bar">
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <span className="pill">OTTERWORKS</span>
+        <span className="muted tiny">Dauer: 3–5 Min • Keine Speicherung ohne Kauf</span>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        {step>1 && <button className="btn" onClick={onBack} aria-label="Zurück">← Zurück</button>}
+      </div>
+    </div>
+  )
+}
+
+const interestsAll = ["Natur","Tiere","Freundschaft","Mut","Gefühle","Kreativität","Entdecken","Musik","Gerechtigkeit"];
+const sdgOptions = [
+  {key:"klima", label:"Klima", one:"Wetterextreme nehmen zu.", stats:["Seit 1880 +1,2°C","70% mehr Hitzetage in EU","Kinder besonders betroffen"], do:["Mit Kindern über Strom sparen sprechen","Zu Fuß/Bus – Mobilität üben"], good:"Viele Lösungen sind schon da – und jedes Handeln zählt."},
+  {key:"vielfalt", label:"Vielfalt", one:"Alle gehören dazu.", stats:["Schule ist Ort der Vielfalt","Sprache prägt Zugehörigkeit"], do:["Gemeinsam Wörter der Wertschätzung sammeln"], good:"Gemeinsamkeit wächst, wenn wir sie üben."},
+  {key:"frieden", label:"Frieden", one:"Konflikte verstehen lernen.", stats:["Konflikte beginnen oft mit Missverständnissen"], do:["Streitschlichter spielen"], good:"Frieden beginnt im Kleinen."},
+  {key:"wasser", label:"Sauberes Wasser", one:"Wasser ist Leben.", stats:["1 von 4 Kindern ohne sicheren Zugang (global)","Wasser sparen ist leicht zu lernen"], do:["Zahnputz-Becher Challenge"], good:"Kleine Rituale schützen Wasser."},
+  {key:"ozean", label:"Ozeane", one:"Meere brauchen Schutz.", stats:["Plastik im Meer gefährdet Tiere"], do:["Müllsammel-Spaziergang"], good:"Weniger Plastik – mehr Leben."},
+  {key:"mobbing", label:"Mobbing", one:"Gemeinsam stark sein.", stats:["Jedes 5. Kind erlebt Ausgrenzung"], do:["Mut-Sätze üben"], good:"Zusammenhalt macht mutig."},
+  {key:"demokratie", label:"Demokratie", one:"Mitbestimmen lernen.", stats:["Kinder erleben Beteiligung im Alltag"], do:["Familienrat ausprobieren"], good:"Mitreden macht Spaß und stark."},
+];
+
+function Modal({open,onClose,children}){
+  const ref = useRef();
+  useEffect(()=>{ if(open){ ref.current?.showModal(); } else { ref.current?.close(); } },[open]);
+  return (
+    <dialog ref={ref} onCancel={onClose}>
+      <div className="modal">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <h3>Mehr erfahren</h3>
+          <button className="btn" onClick={onClose}>✕</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </dialog>
+  )
+}
+
+function App(){
+  const TOTAL = 8;
+  const [step,setStep] = useState(1);
+  const [childAge,setChildAge] = useState(null);
+  const [childName,setChildName] = useState("");
+  const [interests,setInterests] = useState([]);
+  const [sdg,setSdg] = useState(null);
+  const [design,setDesign] = useState("neutral");
+  const [pkg,setPkg] = useState("fav");
+  const [addons,setAddons] = useState([]);
+  const [email,setEmail] = useState("");
+  const [pay,setPay] = useState("card");
+  const [showInfo,setShowInfo] = useState(false);
+  const [currentInfo,setCurrentInfo] = useState(null);
+
+  const back = () => setStep(s => Math.max(1, s-1));
+  const next = () => setStep(s => Math.min(TOTAL, s+1));
+
+  const pkgPrice = useMemo(()=>({ start:19, fav:39, pro:69 })[pkg], [pkg]);
+  const addonPrice = useMemo(()=> addons.length * 8, [addons]);
+  const total = pkgPrice + addonPrice;
+
+  const otterBadge = design === 'masc' ? '🦦' : design === 'fem' ? '🦦✨' : '🦦🌿';
+
+  return (
+    <div className="wrap">
+      <div className="card">
+        <TopBar step={step} total={TOTAL} onBack={back} />
+        <Progress step={step} total={TOTAL} />
+
+        {step===1 && (
+          <section>
+            <h1>Ein Geschenk, das Herz & Zukunft stärkt.</h1>
+            <p>Wählen Sie ein Thema, das zu <em>Ihrem</em> Kind passt – wir verwandeln es in Lied, Gedicht oder Geschichte.</p>
+            <div className="row" style={{marginTop:12}}>
+              <button className="btn primary" onClick={next}>Jetzt starten →</button>
+              <button className="btn" onClick={()=>{ setCurrentInfo({title:"Wie es wirkt", body:(
+                <div>
+                  <p>Geschichten + Musik fördern Empathie, Sprache und Selbstwirksamkeit.</p>
+                  <p className="muted">„Unser Kind spricht seitdem öfter über Gefühle – und traut sich mehr.“ – Lena, Mama</p>
+                </div>
+              )}); setShowInfo(true); }}>Wie es wirkt</button>
+            </div>
+          </section>
+        )}
+
+        {step===2 && (
+          <section>
+            <h2>Schnell personalisieren</h2>
+            <p className="muted">Wie alt ist das Kind? (Optional: Name für die Vorschau)</p>
+            <div className="chips" role="listbox" aria-label="Alter wählen">
+              {[3,4,5,6,7].map(a=> (
+                <div key={a} className={"chip "+(childAge===a?"on":"")} onClick={()=>setChildAge(a)} role="option" aria-selected={childAge===a}>{a}</div>
+              ))}
+            </div>
+            <div className="row">
+              <div className="col">
+                <input className="input" placeholder="Name (optional)" value={childName} onChange={e=>setChildName(e.target.value)} />
+              </div>
+            </div>
+            <div className="footer">
+              <span className="muted tiny">Sie können jederzeit überspringen.</span>
+              <div>
+                <button className="btn" onClick={next}>Überspringen</button>
+                <button className="btn primary" onClick={next} disabled={!childAge}>Weiter →</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step===3 && (
+          <section>
+            <h2>Interessen auswählen</h2>
+            <p className="muted">Worauf springt das Kind an? (max. 3)</p>
+            <div className="chips">
+              {interestsAll.map(tag=>{
+                const on = interests.includes(tag);
+                return <div key={tag} className={"chip "+(on?"on":"")} onClick={()=>{
+                  if(on){ setInterests(prev=>prev.filter(t=>t!==tag)); }
+                  else if(interests.length<3){ setInterests(prev=>[...prev,tag]); }
+                }}>{tag}</div>
+              })}
+            </div>
+            <div className="footer">
+              <span className="muted tiny">Später änderbar.</span>
+              <div>
+                <button className="btn" onClick={next}>Überspringen</button>
+                <button className="btn primary" onClick={next}>Weiter →</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step===4 && (
+          <section>
+            <h2>Thema wählen (SDGs, kindgerecht)</h2>
+            <p className="muted">Kurz & hoffnungsvoll – mit „Was können wir tun?“</p>
+            <div className="grid">
+              {sdgOptions.map(opt=> (
+                <div className="kachel" key={opt.key}>
+                  <h4>{opt.label} {sdg===opt.key && <span className="tag">gewählt</span>}</h4>
+                  <p className="muted">{opt.one}</p>
+                  <div className="chips">
+                    <button className="btn" onClick={()=>{ setCurrentInfo({title:opt.label, body:(
+                      <div>
+                        <p><strong>Kurze Fakten</strong></p>
+                        <ul>{opt.stats.map((s,i)=>(<li key={i} className="muted">{s}</li>))}</ul>
+                        <p><strong>Was können wir tun?</strong></p>
+                        <ul>{opt.do.map((s,i)=>(<li key={i} className="muted">{s}</li>))}</ul>
+                        <p style={{marginTop:8}} className="muted">Gute Nachricht: {opt.good}</p>
+                      </div>
+                    )}); setShowInfo(true); }}>Mehr erfahren</button>
+                    <button className="btn primary" onClick={()=>setSdg(opt.key)}>Wählen</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="footer">
+              <span className="muted tiny">Sie können auch ohne Auswahl fortfahren.</span>
+              <div>
+                <button className="btn" onClick={next}>Überspringen</button>
+                <button className="btn primary" onClick={next}>Weiter →</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step===5 && (
+          <section>
+            <h2>Vorschau</h2>
+            <p className="muted">Sofortige Kostprobe – Cover, Gedicht & Audio‑Teaser</p>
+            <div className="row">
+              <div className="col">
+                <div className="cover" aria-label="Buchcover Vorschau">
+                  <div style={{textAlign:'center'}}>
+                    <div style={{fontSize:48}}>{otterBadge}</div>
+                    <div>{childName?`${childName}s`:'Dein'} Abenteuer</div>
+                    <div className="muted tiny">Design: {design}</div>
+                  </div>
+                </div>
+                <div className="chips" style={{marginTop:8}}>
+                  {['neutral','fem','masc'].map(d=> (
+                    <div key={d} className={"chip "+(design===d?"on":"")} onClick={()=>setDesign(d)}>{d}</div>
+                  ))}
+                </div>
+              </div>
+              <div className="col">
+                <div style={{background:'#0b1220',border:'1px solid rgba(148,163,184,.2)',borderRadius:16,padding:14}}>
+                  <h4>Gedicht‑Auszug</h4>
+                  <p>„Lumi lauscht den Wellen,
+                  Sky sammelt Mut im Wind;
+                  wo Fragen wie Sterne hellen,
+                  beginnt der Weg der Kind.“</p>
+                  <div style={{marginTop:10}}>
+                    <button className="btn">▶ 10‑Sek. Teaser</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="footer">
+              <span className="muted tiny">Sie können später noch anpassen.</span>
+              <div>
+                <button className="btn" onClick={next}>Anpassen später</button>
+                <button className="btn primary" onClick={next}>Sieht gut aus →</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step===6 && (
+          <section>
+            <h2>Paket auswählen</h2>
+            <p className="muted">Klar & ohne Druck – Upgrades optional</p>
+            <div className="grid">
+              <div className="pkg" aria-label="Start Paket">
+                <h3>Start</h3>
+                <p>Gedicht + Audio‑Mini (MP3)</p>
+                <div className="price">19€</div>
+                <label className="radio"><input type="radio" name="pkg" checked={pkg==='start'} onChange={()=>setPkg('start')} /> wählen</label>
+              </div>
+              <div className="pkg" aria-label="Lieblings Paket">
+                <h3>Lieblings</h3>
+                <p>+ Lied (voll) + Illu‑PDF (Cover)</p>
+                <div className="price">39€</div>
+                <label className="radio"><input type="radio" name="pkg" checked={pkg==='fav'} onChange={()=>setPkg('fav')} /> wählen</label>
+              </div>
+              <div className="pkg" aria-label="Festlich Paket">
+                <h3>Festlich</h3>
+                <p>+ personalisierte Geschichte + Druck‑Option</p>
+                <div className="price">69€</div>
+                <label className="radio"><input type="radio" name="pkg" checked={pkg==='pro'} onChange={()=>setPkg('pro')} /> wählen</label>
+              </div>
+            </div>
+            <div style={{marginTop:12}}>
+              <h4>Weitere Themen hinzufügen? <span className="muted tiny">(8€ je Thema)</span></h4>
+              <div className="chips">
+                {sdgOptions.map(o=> (
+                  <div key={o.key} className={"chip "+(addons.includes(o.key)?'on':'')} onClick={()=>{
+                    setAddons(prev=> prev.includes(o.key) ? prev.filter(x=>x!==o.key) : [...prev,o.key]);
+                  }}>{o.label}</div>
+                ))}
+              </div>
+            </div>
+            <div className="footer">
+              <span className="muted">Zwischensumme: <strong>{pkgPrice}€</strong> • Add‑ons: <strong>{addonPrice}€</strong> • <strong>Gesamt: {total}€</strong></span>
+              <div>
+                <button className="btn" onClick={next}>Weiter stöbern</button>
+                <button className="btn primary" onClick={next}>In den Warenkorb →</button>
+              </div>
+            </div>
+            <p className="tiny muted" style={{marginTop:8}}>100% Zufriedenheitsgarantie – innerhalb von 14 Tagen anpassbar.</p>
+          </section>
+        )}
+
+        {step===7 && (
+          <section>
+            <h2>Checkout (Light)</h2>
+            <p className="muted">Wir speichern Ihre Angaben erst mit dem Kauf.</p>
+            <div className="row">
+              <div className="col">
+                <label className="tiny muted">E‑Mail</label>
+                <input className="input" type="email" placeholder="z.B. name@mail.de" value={email} onChange={e=>setEmail(e.target.value)} />
+              </div>
+              <div className="col">
+                <label className="tiny muted">Zahlungsart</label>
+                <select className="input" value={pay} onChange={e=>setPay(e.target.value)}>
+                  <option value="card">Kreditkarte</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="sepa">SEPA Lastschrift</option>
+                </select>
+              </div>
+            </div>
+            <div style={{marginTop:12,background:'#0b1220',border:'1px solid rgba(148,163,184,.2)',borderRadius:12,padding:12}}>
+              <strong>Bestellübersicht</strong>
+              <p className="muted tiny">Paket: {pkg} • Add‑ons: {addons.length} • Gesamt: <strong>{total}€</strong></p>
+            </div>
+            <div className="footer">
+              <span className="tiny muted">DSGVO: Keine Speicherung ohne Kauf • Widerruf 14 Tage</span>
+              <div>
+                <button className="btn" onClick={()=>alert('Entwurf gespeichert – Link per E‑Mail (Demo).')}>Als Entwurf speichern</button>
+                <button className="btn primary" onClick={()=> setStep(8)} disabled={!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)}>Jetzt bestellen →</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step===8 && (
+          <section>
+            <h2>Danke! 🎉</h2>
+            <p className="muted">Ihr Geschenk ist auf dem Weg. Hier sind Downloads & Tipps für das gemeinsame Erleben.</p>
+            <div className="chips">
+              <span className="tag">Download: Audio (Demo)</span>
+              <span className="tag">Download: Cover‑PDF (Demo)</span>
+              <span className="tag">Mini‑Guide: „Mit Kindern sprechen“</span>
+            </div>
+            <div style={{marginTop:12}}>
+              <button className="btn primary" onClick={()=>alert('Newsletter Opt‑in (Demo)')}>Wirkungs‑Newsletter abonnieren</button>
+              <button className="btn" onClick={()=>{ setStep(1); }}>Neu starten</button>
+            </div>
+          </section>
+        )}
+
+        <Modal open={showInfo} onClose={()=>setShowInfo(false)}>
+          {currentInfo && (
+            <div>
+              <h3 style={{marginTop:0}}>{currentInfo.title}</h3>
+              <div className="muted">{currentInfo.body}</div>
+            </div>
+          )}
+        </Modal>
+
+      </div>
+      <p className="tiny muted" style={{marginTop:10}}>Demo‑Hinweis: Dieses Prototyp‑UI dient nur zur Validierung der Customer Journey (Zeit‑to‑Value, Drop‑off‑Risiken, Klarheit). Keine echten Zahlungen.</p>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
